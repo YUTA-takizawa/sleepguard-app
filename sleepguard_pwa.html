@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="AIで居眠りを検知。運転中・勉強中・仕事中の眠気を警告するスマホアプリ">
+    <meta name="keywords" content="居眠り検知,眠気検知,運転支援,勉強,集中力">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <title>SleepGuard - 居眠り検知アプリ</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    
+    <!-- Google AdSense (本番環境で有効化) -->
+    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXX"
+         crossorigin="anonymous"></script> -->
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8f9fa;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 10px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 15px;
+            max-width: 100%;
+            margin-bottom: 60px;
+        }
+
+        /* ヘッダー */
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+        }
+
+        .version {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+
+        /* 通知バナー */
+        .notice {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            line-height: 1.5;
+            border-radius: 5px;
+        }
+
+        .notice.premium {
+            background: #fff8e1;
+            border-left-color: #ffc107;
+        }
+
+        .notice strong {
+            color: #1976D2;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .notice.premium strong {
+            color: #f57c00;
+        }
+
+        /* ビデオコンテナ */
+        .video-container {
+            position: relative;
+            width: 100%;
+            margin: 0 auto 15px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background: #000;
+            max-height: 400px;
+        }
+
+        #video {
+            width: 100%;
+            height: auto;
+            display: none;
+        }
+
+        #canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* ステータス表示（固定） */
+        .status {
+            position: sticky;
+            top: 10px;
+            z-index: 1000;
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status.drowsy {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+
+        .status.sleeping {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        /* コントロール */
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        button {
+            flex: 1;
+            max-width: 150px;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        #startBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        #startBtn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        #stopBtn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        #stopBtn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 設定パネル */
+        .settings {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .settings-title {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .settings-toggle {
+            color: var(--primary);
+            font-size: 1.2em;
+        }
+
+        .settings-content {
+            display: block;
+        }
+
+        .settings-content.collapsed {
+            display: none;
+        }
+
+        .setting-row {
+            margin-bottom: 15px;
+        }
+
+        .setting-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .setting-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 35px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+        }
+
+        input[type="range"]::-webkit-slider-track {
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            margin-top: -8px;
+        }
+
+        input[type="range"]::-moz-range-track {
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        select {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
+
+        /* 情報パネル */
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            color: #555;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #333;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        /* 統計パネル */
+        .stats {
+            background: #f0fdf4;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* エラー表示 */
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #fcc;
+            font-size: 0.9em;
+        }
+
+        /* ローディング */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* プレミアム誘導 */
+        .premium-cta {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .premium-cta h3 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .premium-cta p {
+            color: #555;
+            font-size: 0.85em;
+            margin-bottom: 12px;
+        }
+
+        .premium-btn {
+            display: inline-block;
+            background: #333;
+            color: #ffd700;
+            padding: 10px 25px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .premium-btn:hover {
+            background: #222;
+            transform: translateY(-2px);
+        }
+
+        /* フッター */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* インストールバナー */
+        .install-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+            z-index: 2000;
+        }
+
+        .install-banner.show {
+            display: flex;
+        }
+
+        .install-text {
+            flex: 1;
+            font-size: 0.9em;
+        }
+
+        .install-btn {
+            background: white;
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* スマホ最適化 */
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.3em;
+            }
+            
+            button {
+                padding: 12px 15px;
+                font-size: 14px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👁️ SleepGuard</h1>
+            <p class="subtitle">AI居眠り検知アプリ</p>
+            <span class="version">v1.0 FREE</span>
+        </div>
+
+        <!-- プレミアム誘導 (無料版ユーザー向け) -->
+        <div class="premium-cta" id="premiumBanner">
+            <h3>⭐ プレミアム版にアップグレード</h3>
+            <p>広告なし・無制限使用・詳細統計・カスタムアラーム</p>
+            <a href="#" class="premium-btn" onclick="showPremiumInfo(); return false;">月額100円で試す →</a>
+        </div>
+
+        <div class="notice">
+            <strong>📱 使い方</strong>
+            1. 「カメラ起動」をタップ<br>
+            2. カメラ許可を選択<br>
+            3. インカメラで顔を映す<br>
+            4. 目を閉じると警告音が鳴ります
+        </div>
+
+        <div class="notice premium">
+            <strong>👁️ 目が細い方へ</strong>
+            設定で感度を調整できます（推奨: 0.14〜0.18）
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>AI モデルを読み込み中...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <!-- 設定パネル -->
+        <div class="settings">
+            <div class="settings-header" onclick="toggleSettings()">
+                <span class="settings-title">⚙️ 設定</span>
+                <span class="settings-toggle" id="settingsToggle">▼</span>
+            </div>
+            <div class="settings-content" id="settingsContent">
+                <div class="setting-row">
+                    <label class="setting-label">使用シーン</label>
+                    <div class="setting-control">
+                        <select id="modeSelect">
+                            <option value="study">勉強・デスクワーク (3秒)</option>
+                            <option value="commute">通勤・電車 (2秒)</option>
+                            <option value="drive">運転 (1秒) ※注意</option>
+                            <option value="custom">カスタム</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <label class="setting-label">閉眼検知時間 (秒)</label>
+                    <div class="setting-control">
+                        <input type="range" id="thresholdRange" min="0.5" max="10" step="0.5" value="3">
+                        <input type="number" id="thresholdInput" min="0.5" max="10" step="0.5" value="3">
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <label class="setting-label">感度 (低いほど敏感)</label>
+                    <div class="setting-control">
+                        <input type="range" id="earThreshold" min="0.10" max="0.25" step="0.01" value="0.16">
+                        <span id="earValue" style="min-width: 45px; text-align: right; font-family: monospace;">0.16</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn">📷 カメラ起動</button>
+            <button id="stopBtn" disabled>⏹️ 停止</button>
+        </div>
+
+        <div id="status" class="status active" style="display: none;">
+            状態: 待機中
+        </div>
+
+        <div class="video-container">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div id="info" class="info" style="display: none;">
+            <div class="info-row">
+                <span class="info-label">現在のEAR値:</span>
+                <span class="info-value" id="currentEAR">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">閉眼時間:</span>
+                <span class="info-value" id="closedTime">0.0秒</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">瞬き回数:</span>
+                <span class="info-value" id="blinkCount">0回</span>
+            </div>
+        </div>
+
+        <!-- 統計表示 (プレミアム機能のプレビュー) -->
+        <div class="stats" style="display: none;" id="statsPanel">
+            <h3 style="margin-bottom: 10px; text-align: center;">📊 セッション統計</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="sessionDuration">0:00</div>
+                    <div class="stat-label">使用時間</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="alertCount">0</div>
+                    <div class="stat-label">警告回数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgEAR">-</div>
+                    <div class="stat-label">平均EAR</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalBlinks">0</div>
+                    <div class="stat-label">総瞬き数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>SleepGuard v1.0 | <a href="#" onclick="showAbout(); return false;">アプリについて</a> | <a href="#" onclick="showPrivacy(); return false;">プライバシー</a></p>
+        <p style="margin-top: 5px; font-size: 0.9em;">© 2025 SleepGuard. All rights reserved.</p>
+    </div>
+
+    <!-- PWAインストールバナー -->
+    <div class="install-banner" id="installBanner">
+        <div class="install-text">
+            <strong>📱 ホーム画面に追加</strong><br>
+            アプリのように使えます
+        </div>
+        <button class="install-btn" onclick="installPWA()">追加</button>
+    </div>
+
+    <script>
+        // PWA登録
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(reg => console.log('PWA registered:', reg))
+                .catch(err => console.log('PWA registration failed:', err));
+        }
+
+        // PWAインストールプロンプト
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBanner').classList.add('show');
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('PWA installed');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('installBanner').classList.remove('show');
+                });
+            }
+        }
+
+        // 変数定義
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusDiv = document.getElementById('status');
+        const infoDiv = document.getElementById('info');
+        const errorDiv = document.getElementById('error');
+        const loadingDiv = document.getElementById('loading');
+        const statsPanel = document.getElementById('statsPanel');
+
+        let faceMesh = null;
+        let camera = null;
+        let isRunning = false;
+        let closedEyeStartTime = null;
+        let blinkCount = 0;
+        let audioContext = null;
+        let earThreshold = 0.16;
+        let sleepThreshold = 3.0;
+        let wakeLock = null;
+        let lastAlarmTime = 0;
+        let sessionStartTime = null;
+        let alertCount = 0;
+        let earHistory = [];
+
+        const LEFT_EYE = [33, 160, 158, 133, 153, 144];
+        const RIGHT_EYE = [362, 385, 387, 263, 373, 380];
+
+        // モード選択
+        document.getElementById('modeSelect').addEventListener('change', (e) => {
+            const mode = e.target.value;
+            const thresholds = {
+                'study': 3.0,
+                'commute': 2.0,
+                'drive': 1.0,
+                'custom': sleepThreshold
+            };
+            
+            if (mode !== 'custom') {
+                sleepThreshold = thresholds[mode];
+                document.getElementById('thresholdInput').value = sleepThreshold;
+                document.getElementById('thresholdRange').value = sleepThreshold;
+            }
+        });
+
+        // 設定トグル
+        function toggleSettings() {
+            const content = document.getElementById('settingsContent');
+            const toggle = document.getElementById('settingsToggle');
+            content.classList.toggle('collapsed');
+            toggle.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
+        }
+
+        // Wake Lock (画面を消さない)
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock activated');
+                    
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Wake Lock released');
+                    });
+                }
+            } catch (err) {
+                console.error('Wake Lock error:', err);
+            }
+        }
+
+        // 警告音
+        function playAlarm() {
+            const now = Date.now();
+            if (now - lastAlarmTime < 3000) return;
+            lastAlarmTime = now;
+            alertCount++;
+
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 880;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+
+            // バイブレーション
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+
+        // EAR計算
+        function calculateEAR(eyePoints) {
+            const vertical1 = Math.hypot(
+                eyePoints[1].x - eyePoints[5].x,
+                eyePoints[1].y - eyePoints[5].y
+            );
+            const vertical2 = Math.hypot(
+                eyePoints[2].x - eyePoints[4].x,
+                eyePoints[2].y - eyePoints[4].y
+            );
+            const horizontal = Math.hypot(
+                eyePoints[0].x - eyePoints[3].x,
+                eyePoints[0].y - eyePoints[3].y
+            );
+
+            return (vertical1 + vertical2) / (2.0 * horizontal);
+        }
+
+        // 目を描画
+        function drawEye(points, color) {
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        // 統計更新
+        function updateStats() {
+            if (!sessionStartTime) return;
+            
+            const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+            const minutes = Math.floor(duration / 60);
+            const seconds = duration % 60;
+            document.getElementById('sessionDuration').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('alertCount').textContent = alertCount;
+            document.getElementById('totalBlinks').textContent = blinkCount;
+            
+            if (earHistory.length > 0) {
+                const avgEAR = earHistory.reduce((a, b) => a + b, 0) / earHistory.length;
+                document.getElementById('avgEAR').textContent = avgEAR.toFixed(3);
+            }
+        }
+
+        // FaceMeshの結果処理
+        function onResults(results) {
+            if (!isRunning) return;
+
+            const displayWidth = canvas.clientWidth;
+            const displayHeight = canvas.clientHeight;
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.translate(-canvas.width, 0);
+            ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                const landmarks = results.multiFaceLandmarks[0];
+                
+                const leftEyePoints = LEFT_EYE.map(i => ({
+                    x: landmarks[i].x * canvas.width,
+                    y: landmarks[i].y * canvas.height
+                }));
+                const rightEyePoints = RIGHT_EYE.map(i => ({
+                    x: landmarks[i].x * canvas.width,
+                    y: landmarks[i].y * canvas.height
+                }));
+
+                const leftEAR = calculateEAR(leftEyePoints);
+                const rightEAR = calculateEAR(rightEyePoints);
+                const avgEAR = (leftEAR + rightEAR) / 2.0;
+
+                earHistory.push(avgEAR);
+                if (earHistory.length > 100) earHistory.shift();
+
+                document.getElementById('currentEAR').textContent = avgEAR.toFixed(3);
+
+                if (avgEAR < earThreshold) {
+                    if (closedEyeStartTime === null) {
+                        closedEyeStartTime = Date.now();
+                    }
+
+                    const closedDuration = (Date.now() - closedEyeStartTime) / 1000;
+                    document.getElementById('closedTime').textContent = closedDuration.toFixed(1) + '秒';
+
+                    if (closedDuration >= sleepThreshold) {
+                        statusDiv.textContent = '⚠️ 警告: 居眠り検知!';
+                        statusDiv.className = 'status sleeping';
+                        playAlarm();
+                    } else if (closedDuration >= sleepThreshold * 0.5) {
+                        statusDiv.textContent = '😴 注意: 目が閉じています';
+                        statusDiv.className = 'status drowsy';
+                    } else {
+                        statusDiv.textContent = '👀 目を閉じています...';
+                        statusDiv.className = 'status active';
+                    }
+
+                    drawEye(leftEyePoints, 'rgba(255, 0, 0, 0.5)');
+                    drawEye(rightEyePoints, 'rgba(255, 0, 0, 0.5)');
+                } else {
+                    if (closedEyeStartTime !== null) {
+                        const closedDuration = (Date.now() - closedEyeStartTime) / 1000;
+                        if (closedDuration >= 0.05 && closedDuration < 0.4) {
+                            blinkCount++;
+                            document.getElementById('blinkCount').textContent = blinkCount + '回';
+                        }
+                        closedEyeStartTime = null;
+                        document.getElementById('closedTime').textContent = '0.0秒';
+                    }
+
+                    statusDiv.textContent = '✅ 正常: 目が開いています';
+                    statusDiv.className = 'status active';
+
+                    drawEye(leftEyePoints, 'rgba(0, 255, 0, 0.5)');
+                    drawEye(rightEyePoints, 'rgba(0, 255, 0, 0.5)');
+                }
+
+                updateStats();
+            } else {
+                statusDiv.textContent = '👤 顔が検出されていません';
+                statusDiv.className = 'status drowsy';
+                closedEyeStartTime = null;
+            }
+        }
+
+        // カメラ起動
+        async function startCamera() {
+            try {
+                loadingDiv.style.display = 'block';
+                startBtn.disabled = true;
+
+                await requestWakeLock();
+
+                faceMesh = new FaceMesh({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                    }
+                });
+
+                faceMesh.setOptions({
+                    maxNumFaces: 1,
+                    refineLandmarks: true,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                faceMesh.onResults(onResults);
+
+                camera = new Camera(video, {
+                    onFrame: async () => {
+                        if (isRunning) {
+                            await faceMesh.send({image: video});
+                        }
+                    },
+                    width: 1280,
+                    height: 720,
+                    facingMode: 'user'
+                });
+
+                await camera.start();
+                
+                loadingDiv.style.display = 'none';
+                isRunning = true;
+                stopBtn.disabled = false;
+                statusDiv.style.display = 'block';
+                infoDiv.style.display = 'block';
+                statsPanel.style.display = 'block';
+                blinkCount = 0;
+                alertCount = 0;
+                closedEyeStartTime = null;
+                sessionStartTime = Date.now();
+                errorDiv.style.display = 'none';
+                
+            } catch (err) {
+                loadingDiv.style.display = 'none';
+                showError('カメラを起動できませんでした。ブラウザでカメラの許可を確認してください。');
+                console.error(err);
+                startBtn.disabled = false;
+            }
+        }
+
+        // カメラ停止
+        function stopCamera() {
+            isRunning = false;
+            if (camera) {
+                camera.stop();
+                camera = null;
+            }
+            if (faceMesh) {
+                faceMesh.close();
+                faceMesh = null;
+            }
+            if (wakeLock) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusDiv.style.display = 'none';
+            infoDiv.style.display = 'none';
+            sessionStartTime = null;
+        }
+
+        function showError(message) {
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.style.display = 'block';
+        }
+
+        function showPremiumInfo() {
+            alert('プレミアム版の詳細:\n\n✅ 広告なし\n✅ 無制限使用\n✅ 詳細統計とグラフ\n✅ カスタムアラーム音\n✅ 運転レポートPDF出力\n\n月額100円 または 買い切り500円\n\n※現在準備中です');
+        }
+
+        function showAbout() {
+            alert('SleepGuard v1.0\n\nAI技術で目の動きを監視し、居眠りを検知します。\n運転中・勉強中・仕事中の眠気対策に。\n\n開発: SleepGuard Team\nお問い合わせ: support@sleepguard.app');
+        }
+
+        function showPrivacy() {
+            alert('プライバシーポリシー\n\nカメラ映像はすべてデバイス内で処理され、外部に送信されません。\n統計データは匿名化されローカルに保存されます。\n\n詳細: https://sleepguard.app/privacy');
+        }
+
+        // 設定変更
+        const thresholdInput = document.getElementById('thresholdInput');
+        const thresholdRange = document.getElementById('thresholdRange');
+        const earThresholdInput = document.getElementById('earThreshold');
+        const earValueSpan = document.getElementById('earValue');
+
+        thresholdInput.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            sleepThreshold = value;
+            thresholdRange.value = value;
+            document.getElementById('modeSelect').value = 'custom';
+        });
+
+        thresholdRange.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            sleepThreshold = value;
+            thresholdInput.value = value;
+            document.getElementById('modeSelect').value = 'custom';
+        });
+
+        earThresholdInput.addEventListener('input', (e) => {
+            earThreshold = parseFloat(e.target.value);
+            earValueSpan.textContent = earThreshold.toFixed(2);
+        });
+
+        startBtn.addEventListener('click', startCamera);
+        stopBtn.addEventListener('click', stopCamera);
+
+        // 統計更新タイマー
+        setInterval(() => {
+            if (isRunning) {
+                updateStats();
+            }
+        }, 1000);
+
+        // ページ離脱時にWake Lock解放
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && wakeLock) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+        });
+    </script>
+</body>
+</html>
