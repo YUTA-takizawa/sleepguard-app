@@ -1,0 +1,47 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="eyeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8e8e8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)"/>
+  
+  <!-- Shield outline (protection theme) -->
+  <path d="M256 80 L380 120 L380 240 Q380 340 256 420 Q132 340 132 240 L132 120 Z" 
+        fill="none" stroke="white" stroke-width="8" opacity="0.3"/>
+  
+  <!-- Main eye shape -->
+  <ellipse cx="256" cy="256" rx="140" ry="90" fill="url(#eyeGradient)" stroke="#333" stroke-width="6"/>
+  
+  <!-- Upper eyelid (alert state) -->
+  <path d="M116 256 Q256 190 396 256" fill="none" stroke="#333" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Lower eyelid -->
+  <path d="M116 256 Q256 322 396 256" fill="none" stroke="#333" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Iris -->
+  <circle cx="256" cy="256" r="50" fill="#4a5568"/>
+  
+  <!-- Pupil with alert highlight -->
+  <circle cx="256" cy="256" r="28" fill="#1a202c"/>
+  
+  <!-- Eye highlight (awake/alert) -->
+  <circle cx="240" cy="240" r="12" fill="white" opacity="0.8"/>
+  <circle cx="268" cy="248" r="6" fill="white" opacity="0.6"/>
+  
+  <!-- Alert indicator (small dot) -->
+  <circle cx="380" cy="180" r="24" fill="#ef4444"/>
+  <circle cx="380" cy="180" r="18" fill="#fee"/>
+  <text x="380" y="190" text-anchor="middle" font-size="28" font-weight="bold" fill="#ef4444">!</text>
+  
+  <!-- "SG" monogram at bottom -->
+  <text x="256" y="440" text-anchor="middle" font-size="48" font-weight="bold" fill="white" opacity="0.9">SG</text>
+</svg>

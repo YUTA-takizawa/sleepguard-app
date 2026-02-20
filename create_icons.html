@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Icon Generator</title>
+</head>
+<body>
+    <h2>SleepGuard Icon Generator</h2>
+    <p>このHTMLをブラウザで開いて、右クリック→「名前を付けて画像を保存」でPNG形式で保存してください</p>
+    
+    <h3>192x192 アイコン</h3>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    
+    <h3>512x512 アイコン</h3>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+    
+    <script>
+        function drawIcon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            const center = size / 2;
+            
+            // Background gradient
+            const bgGradient = ctx.createLinearGradient(0, 0, size, size);
+            bgGradient.addColorStop(0, '#667eea');
+            bgGradient.addColorStop(1, '#764ba2');
+            
+            ctx.fillStyle = bgGradient;
+            ctx.beginPath();
+            ctx.arc(center, center, size * 0.47, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Shield outline
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = size * 0.015;
+            ctx.beginPath();
+            ctx.moveTo(center, size * 0.15);
+            ctx.lineTo(size * 0.75, size * 0.23);
+            ctx.lineTo(size * 0.75, size * 0.47);
+            ctx.quadraticCurveTo(size * 0.75, size * 0.66, center, size * 0.82);
+            ctx.quadraticCurveTo(size * 0.25, size * 0.66, size * 0.25, size * 0.47);
+            ctx.lineTo(size * 0.25, size * 0.23);
+            ctx.closePath();
+            ctx.stroke();
+            
+            // Eye white
+            const eyeGradient = ctx.createLinearGradient(center, center - size * 0.18, center, center + size * 0.18);
+            eyeGradient.addColorStop(0, '#ffffff');
+            eyeGradient.addColorStop(1, '#e8e8e8');
+            
+            ctx.fillStyle = eyeGradient;
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = size * 0.012;
+            ctx.beginPath();
+            ctx.ellipse(center, center, size * 0.27, size * 0.18, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Eyelids
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = size * 0.012;
+            ctx.lineCap = 'round';
+            
+            // Upper
+            ctx.beginPath();
+            ctx.moveTo(center - size * 0.27, center);
+            ctx.quadraticCurveTo(center, center - size * 0.13, center + size * 0.27, center);
+            ctx.stroke();
+            
+            // Lower
+            ctx.beginPath();
+            ctx.moveTo(center - size * 0.27, center);
+            ctx.quadraticCurveTo(center, center + size * 0.13, center + size * 0.27, center);
+            ctx.stroke();
+            
+            // Iris
+            ctx.fillStyle = '#4a5568';
+            ctx.beginPath();
+            ctx.arc(center, center, size * 0.098, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Pupil
+            ctx.fillStyle = '#1a202c';
+            ctx.beginPath();
+            ctx.arc(center, center, size * 0.055, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Highlights
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(center - size * 0.03, center - size * 0.03, size * 0.023, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.arc(center + size * 0.023, center + size * 0.015, size * 0.012, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Alert indicator
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(size * 0.74, size * 0.35, size * 0.047, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fee';
+            ctx.beginPath();
+            ctx.arc(size * 0.74, size * 0.35, size * 0.035, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ef4444';
+            ctx.font = `bold ${size * 0.055}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('!', size * 0.74, size * 0.35);
+            
+            // "SG" text
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = `bold ${size * 0.094}px Arial`;
+            ctx.fillText('SG', center, size * 0.86);
+        }
+        
+        drawIcon(document.getElementById('canvas192'));
+        drawIcon(document.getElementById('canvas512'));
+    </script>
+</body>
+</html>
