@@ -534,7 +534,190 @@
             cursor: pointer;
         }
 
-        /* スマホ最適化 */
+        /* ====== プレミアムモーダル ====== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px; right: 18px;
+            font-size: 1.6em;
+            cursor: pointer;
+            color: #999;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+            max-width: none;
+            box-shadow: none;
+            flex: none;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.4em;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .modal-header p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .plan-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 14px;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+        }
+
+        .plan-card.recommended {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, #f8f9ff 0%, #eff3ff 100%);
+        }
+
+        .plan-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(102, 126, 234, 0.2);
+        }
+
+        .plan-badge {
+            position: absolute;
+            top: -11px; right: 15px;
+            background: var(--primary);
+            color: white;
+            padding: 3px 12px;
+            border-radius: 10px;
+            font-size: 0.72em;
+            font-weight: bold;
+        }
+
+        .plan-name {
+            font-size: 1em;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .plan-price {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary);
+            line-height: 1.1;
+        }
+
+        .plan-period {
+            font-size: 0.45em;
+            color: #888;
+            font-weight: normal;
+        }
+
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0 14px;
+            font-size: 0.85em;
+            color: #555;
+        }
+
+        .plan-features li {
+            padding: 3px 0;
+        }
+
+        .plan-features li::before {
+            content: '✅ ';
+        }
+
+        .pay-btn {
+            width: 100%;
+            padding: 13px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            max-width: none;
+            flex: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
+            display: block;
+        }
+
+        .pay-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+        }
+
+        .modal-divider {
+            text-align: center;
+            color: #ccc;
+            margin: 10px 0;
+            font-size: 0.85em;
+        }
+
+        .restore-link {
+            display: block;
+            text-align: center;
+            color: var(--primary);
+            font-size: 0.85em;
+            margin-top: 8px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* 成功バナー */
+        .premium-success-banner {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-15px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ====== スマホ最適化 ====== */
         @media (max-width: 480px) {
             body {
                 padding: 5px;
@@ -567,11 +750,17 @@
             <span class="version">v1.0 FREE</span>
         </div>
 
+        <!-- プレミアム購入成功バナー -->
+        <div class="premium-success-banner" id="premiumSuccessBanner">
+            <strong>🎉 プレミアム版へようこそ！</strong><br>
+            <small>すべての機能が解放されました</small>
+        </div>
+
         <!-- プレミアム誘導 (無料版ユーザー向け) -->
         <div class="premium-cta" id="premiumBanner">
             <h3>⭐ プレミアム版にアップグレード</h3>
             <p>広告なし・無制限使用・詳細統計・カスタムアラーム</p>
-            <a href="#" class="premium-btn" onclick="showPremiumInfo(); return false;">月額100円で試す →</a>
+            <a href="#" class="premium-btn" onclick="showPremiumModal(); return false;">月額100円で試す →</a>
         </div>
 
         <div class="notice">
@@ -685,6 +874,48 @@
     <div class="footer">
         <p>SleepGuard v1.0 | <a href="#" onclick="showAbout(); return false;">アプリについて</a> | <a href="#" onclick="showPrivacy(); return false;">プライバシー</a></p>
         <p style="margin-top: 5px; font-size: 0.9em;">© 2025 SleepGuard. All rights reserved.</p>
+    </div>
+
+    <!-- プレミアムモーダル -->
+    <div class="modal-overlay hidden" id="premiumModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closePremiumModal()">×</button>
+            <div class="modal-header">
+                <h2>⭐ SleepGuard Premium</h2>
+                <p>より安全で快適な眠気検知を</p>
+            </div>
+
+            <!-- 月額プラン -->
+            <div class="plan-card">
+                <div class="plan-name">月額プラン</div>
+                <div class="plan-price">¥100<span class="plan-period"> /月</span></div>
+                <ul class="plan-features">
+                    <li>広告なし</li>
+                    <li>無制限使用</li>
+                    <li>詳細統計・グラフ</li>
+                    <li>カスタムアラーム音</li>
+                </ul>
+                <button class="pay-btn" onclick="handlePayment('monthly')">月額¥100で始める</button>
+            </div>
+
+            <!-- 買い切りプラン -->
+            <div class="plan-card recommended">
+                <div class="plan-badge">おすすめ</div>
+                <div class="plan-name">買い切りプラン</div>
+                <div class="plan-price">¥500</div>
+                <ul class="plan-features">
+                    <li>広告なし（永久）</li>
+                    <li>無制限使用（永久）</li>
+                    <li>詳細統計・グラフ</li>
+                    <li>カスタムアラーム音</li>
+                    <li>将来のアップデートも無料</li>
+                </ul>
+                <button class="pay-btn" onclick="handlePayment('lifetime')">¥500で永久購入</button>
+            </div>
+
+            <div class="modal-divider">── または ──</div>
+            <a class="restore-link" onclick="restorePurchase(); return false;">既にご購入済みの方はこちら</a>
+        </div>
     </div>
 
     <!-- PWAインストールバナー -->
@@ -1049,10 +1280,6 @@
             errorDiv.style.display = 'block';
         }
 
-        function showPremiumInfo() {
-            alert('プレミアム版の詳細:\n\n✅ 広告なし\n✅ 無制限使用\n✅ 詳細統計とグラフ\n✅ カスタムアラーム音\n✅ 運転レポートPDF出力\n\n月額100円 または 買い切り500円\n\n※現在準備中です');
-        }
-
         function showAbout() {
             alert('SleepGuard v1.0\n\nAI技術で目の動きを監視し、居眠りを検知します。\n運転中・勉強中・仕事中の眠気対策に。\n\n開発: SleepGuard Team\nお問い合わせ: support@sleepguard.app');
         }
@@ -1089,7 +1316,114 @@
         startBtn.addEventListener('click', startCamera);
         stopBtn.addEventListener('click', stopCamera);
 
-        // 統計更新タイマー
+        // ====== プレミアム課金機能 ======
+
+        const PREMIUM_KEY = 'sleepguard_premium_v1';
+
+        // Stripe Payment Links
+        // ※ Stripeダッシュボードで成功URLを下記に設定してください:
+        //   https://yuta-takizawa.github.io/sleepguard-app/?premium=success
+        const PAYMENT_LINKS = {
+            monthly:  '',  // ¥100/月 の Stripe Payment Link URLを貼り付け
+            lifetime: ''   // ¥500買い切りの Stripe Payment Link URLを貼り付け
+        };
+
+        function isPremium() {
+            return localStorage.getItem(PREMIUM_KEY) === 'true';
+        }
+
+        function setPremium() {
+            localStorage.setItem(PREMIUM_KEY, 'true');
+        }
+
+        function showPremiumModal() {
+            if (isPremium()) {
+                alert('✅ 既にプレミアム版をご利用中です！\nすべての機能が解放されています。');
+                return;
+            }
+            document.getElementById('premiumModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePremiumModal() {
+            document.getElementById('premiumModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function handlePayment(plan) {
+            const link = PAYMENT_LINKS[plan];
+            if (!link) {
+                // Stripeリンク未設定時のフォールバック（開発・テスト用）
+                if (confirm('現在、決済システムを準備中です。\nテスト用にプレミアム機能を有効にしますか？')) {
+                    setPremium();
+                    closePremiumModal();
+                    updatePremiumUI();
+                    showPremiumSuccessBanner();
+                }
+                return;
+            }
+            window.location.href = link;
+        }
+
+        function restorePurchase() {
+            const code = prompt('購入時に発行されたライセンスコードを入力してください:\n(例: SG-XXXX-XXXX-XXXX)');
+            if (!code) return;
+            // ライセンスコードの形式チェック (本番ではサーバー検証推奨)
+            if (/^SG-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code.trim().toUpperCase())) {
+                setPremium();
+                closePremiumModal();
+                updatePremiumUI();
+                showPremiumSuccessBanner();
+            } else {
+                alert('コードが正しくありません。\n購入確認メールをご確認ください。');
+            }
+        }
+
+        function showPremiumSuccessBanner() {
+            const banner = document.getElementById('premiumSuccessBanner');
+            banner.style.display = 'block';
+            setTimeout(() => { banner.style.display = 'none'; }, 6000);
+        }
+
+        function updatePremiumUI() {
+            if (!isPremium()) return;
+
+            // プレミアムCTAを非表示
+            document.getElementById('premiumBanner').style.display = 'none';
+
+            // バージョンバッジをプレミアム表示に変更
+            const badge = document.querySelector('.version');
+            badge.textContent = 'v1.0 PREMIUM ⭐';
+            badge.style.background = 'linear-gradient(135deg, #ffd700 0%, #ffa500 100%)';
+            badge.style.color = '#333';
+
+            // AdSense広告を非表示
+            document.querySelectorAll('.adsbygoogle').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+
+        // 決済完了後のリダイレクト検出
+        function checkPaymentReturn() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('premium') === 'success') {
+                setPremium();
+                window.history.replaceState({}, '', window.location.pathname);
+                updatePremiumUI();
+                showPremiumSuccessBanner();
+            }
+        }
+
+        // モーダル外側クリックで閉じる
+        document.getElementById('premiumModal').addEventListener('click', function(e) {
+            if (e.target === this) closePremiumModal();
+        });
+
+        // 初期化
+        checkPaymentReturn();
+        updatePremiumUI();
+
+        // ====== 統計更新タイマー ======
         setInterval(() => {
             if (isRunning) {
                 updateStats();
