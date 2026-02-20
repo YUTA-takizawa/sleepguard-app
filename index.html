@@ -879,11 +879,11 @@
                 const landmarks = results.multiFaceLandmarks[0];
                 
                 const leftEyePoints = LEFT_EYE.map(i => ({
-                    x: landmarks[i].x * canvas.width,
+                    x: canvas.width - landmarks[i].x * canvas.width,
                     y: landmarks[i].y * canvas.height
                 }));
                 const rightEyePoints = RIGHT_EYE.map(i => ({
-                    x: landmarks[i].x * canvas.width,
+                    x: canvas.width - landmarks[i].x * canvas.width,
                     y: landmarks[i].y * canvas.height
                 }));
 
