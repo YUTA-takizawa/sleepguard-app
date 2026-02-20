@@ -616,13 +616,21 @@
 
         .plan-badge {
             position: absolute;
-            top: -11px; right: 15px;
+            top: -11px; right: 10px;
             background: var(--primary);
             color: white;
-            padding: 3px 12px;
+            padding: 3px 10px;
             border-radius: 10px;
             font-size: 0.72em;
             font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .plan-saving {
+            font-size: 0.8em;
+            color: #10b981;
+            font-weight: bold;
+            margin: 3px 0 10px;
         }
 
         .plan-name {
@@ -900,9 +908,10 @@
 
             <!-- 買い切りプラン -->
             <div class="plan-card recommended">
-                <div class="plan-badge">おすすめ</div>
+                <div class="plan-badge">3ヶ月で元が取れる！</div>
                 <div class="plan-name">買い切りプラン</div>
-                <div class="plan-price">¥500</div>
+                <div class="plan-price">¥300</div>
+                <div class="plan-saving">月額×3回分 → あとはずっと無料</div>
                 <ul class="plan-features">
                     <li>広告なし（永久）</li>
                     <li>無制限使用（永久）</li>
@@ -910,7 +919,7 @@
                     <li>カスタムアラーム音</li>
                     <li>将来のアップデートも無料</li>
                 </ul>
-                <button class="pay-btn" onclick="handlePayment('lifetime')">¥500で永久購入</button>
+                <button class="pay-btn" onclick="handlePayment('lifetime')">¥300で永久購入 →</button>
             </div>
 
             <div class="modal-divider">── または ──</div>
